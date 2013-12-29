@@ -417,18 +417,6 @@ function _getObjectNextElement(element){
 function _getChunkHash(hash){
 	this.genericBuffer = {hash: hash};
 	this.unpack(_getChunkStart);
-	
-	var hash = this.unpack_string(),
-			start = this.unpack(),
-			metadata,
-			total,
-			end,
-			data;
-	
-	end = this.unpack();
-	data = this.unpack_raw(end - start);
-	
-	return new Chunk(data,start,end,hash,metadata,total);
 }
 
 function _getChunkStart(start){
@@ -571,8 +559,7 @@ function _rawUnpack(type){
 		
 		// Chunk
 		case 0x1e:
-			this.callbacks.push(_getChunkHash);
-			return this.read(1,_startStringUnpack);
+			return this.unpack(_getChunkHash);
 	}
 }
 
@@ -989,7 +976,7 @@ Unpacker.prototype.unpack_map = function(){
 // Chunk
 
 Unpacker.prototype.unpack_chunk = function(){
-	var hash = this.unpack_string(),
+	var hash = this.unpack(),
 			start = this.unpack(),
 			metadata,
 			total,
@@ -1339,7 +1326,7 @@ Packer.prototype.pack_float64 = function(num){
 
 Packer.prototype.pack_chunk = function(chunk){
 	this.bufferBuilder.append(Uint8ToBuffer(0x1e));
-	this.pack_raw_string(chunk.hash);
+	this.pack(chunk.hash);
 	this.pack(chunk.start);
 	if(chunk.start == 0){
 		var packer = new Packer();
@@ -1559,8 +1546,7 @@ Chunker.prototype.getNextChunk = function(size){
 
 // Joiner
 
-function Joiner(hash){
-	this.hash = hash;
+function Joiner(){
 	this.result = new Blob();
 	
 	this.index = 0;
