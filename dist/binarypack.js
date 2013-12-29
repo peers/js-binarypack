@@ -1043,11 +1043,17 @@ Packer.prototype.pack = function(value){
 				if(value.constructor == Object) return this.pack_object(value);
 				if(value instanceof Array) return this.pack_array(value);
 				if(value instanceof Date) return this.pack_date(value);
+				
+				
+				if(value instanceof Chunk) return this.pack_chunk(value);
+				
 				if(value instanceof Blob){
 					if(value instanceof File) return this.pack_file(value);
 					return this.pack_blob(value);
 				}
+				
 				if(value instanceof ArrayBuffer) return this.pack_buffer(value);
+				
 				if(value.buffer instanceof ArrayBuffer){
 					if(value instanceof Uint8Array) return this.pack_uint8array(value);
 					if(value instanceof Uint16Array) return this.pack_uint16array(value);
