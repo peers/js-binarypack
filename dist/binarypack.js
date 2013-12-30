@@ -1552,7 +1552,7 @@ Chunker.prototype.getNextChunk = function(size){
 // Joiner
 
 function Joiner(){
-	this.result = new Blob();
+	this.result = [];
 	
 	this.index = 0;
 	this.complete = 0;
@@ -1578,9 +1578,11 @@ Joiner.prototype.addChunk = function(chunk){
 		return true;
 	}
 	
-	this.result = new Blob([this.result,chunk.data]);
+	this.result.push(chunk.data);
 	this.index = chunk.end;
 	this.complete = this.index / this.total;
+	
+	if(this.complete >= 1) this.result = new Blob(this.result);
 	
 	var i;
 	if((i = this.buffer.pointers.indexOf(this.index)) != -1){
@@ -1617,7 +1619,7 @@ exports.BinaryPack = {
 			f.readAsArrayBuffer(data);
 		}
 	},
-	maxSize: 10e3,
+	maxSize: 1e6,
 	pack: function(data){
 		var packer = new Packer();
 		packer.pack(data);
