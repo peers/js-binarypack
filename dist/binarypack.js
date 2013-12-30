@@ -78,7 +78,6 @@ function BlobUnpacker(data){
 	// Data is blob
 	this.index = 0;
 	this.blob = data;
-	this.length = data.size;
 	
 	this.reader = new FileReader();
 	this.reader.onload = _onReaderLoad;
@@ -998,9 +997,9 @@ Unpacker.prototype.unpack_chunk = function(){
 
 Unpacker.prototype.read = function(length){
 	var j = this.index;
-	if (j + length <= this.length) {
-		return this.dataView.subarray(j, j + length);
-	} else {
+	if(j + length <= this.length){
+		return this.dataView.subarray(j,j + length);
+	}else{
 		throw new Error('BinaryPackFailure: read index out of range');
 	}
 }
@@ -1612,9 +1611,10 @@ exports.BinaryPack = {
 		}else{
 			var f = new FileReader();
 			f.onload = function(){
-				var unpacker = new Unpacker(data);
+				var unpacker = new Unpacker(f.result);
 				callback.call(unpacker,unpacker.unpack());
 			};
+			f.readAsArrayBuffer(data);
 		}
 	},
 	maxSize: 10e3,
