@@ -1552,7 +1552,7 @@ Chunker.prototype.getNextChunk = function(size){
 // Joiner
 
 function Joiner(){
-	this.result = [];
+	this.result = new Blob();
 	
 	this.index = 0;
 	this.complete = 0;
@@ -1578,11 +1578,9 @@ Joiner.prototype.addChunk = function(chunk){
 		return true;
 	}
 	
-	this.result.push(chunk.data);
+	this.result = new Blob([this.result,chunk.data]);
 	this.index = chunk.end;
 	this.complete = this.index / this.total;
-	
-	if(this.complete >= 1) this.result = new Blob(this.result);
 	
 	var i;
 	if((i = this.buffer.pointers.indexOf(this.index)) != -1){
@@ -1594,11 +1592,30 @@ Joiner.prototype.addChunk = function(chunk){
 	return true;
 }
 
-// Exports
+//--------------------//
+// ARRAYBUFFER ERASER //
+//--------------------//
+
+var _garbageCollector = (function(){
+	var ef = URL.createObjectURL(new Blob([''],{type: 'text/javascript'})),
+			w = new Worker(ef);
+	
+	URL.revokeObjectURL(ef);
+	return w;
+})();
+
+function eraseBuffer(ab){
+	_garbageCollector.postMessage(ab,[ab]);
+}
+
+//---------//
+// EXPORTS //
+//---------//
 
 exports.BinaryPack = {
 	Chunker: Chunker,
 	Joiner: Joiner,
+	free: eraseBuffer,
 	isChunk: function(data){
 		return data instanceof Chunk;
 	},
