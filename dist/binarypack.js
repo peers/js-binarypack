@@ -41,6 +41,8 @@ BufferBuilder.prototype.flush = function() {
     if(!binaryFeatures.useArrayBufferView) {
       buf = buf.buffer;
     }
+    
+    setTimeout(eraseBuffer,0,buf.buffer);
     this._parts.push(buf);
     this._pieces = [];
   }
@@ -95,6 +97,9 @@ function BlobUnpacker(data){
 }
 
 function _onReaderLoad(){
+	if(!this.obj.keepIt) setTimeout(eraseBuffer,0,this.result);
+	else this.obj.keepIt = false;
+	
 	this.obj.callbacks.pop().call(this.obj,this.result);
 }
 
@@ -253,6 +258,7 @@ function _getBlobSize(size){
 // ArrayBuffer
 
 function _getArrayBufferSize(size){
+	this.keepIt = true;
 	this.read(size,_getArrayBuffer);
 }
 
@@ -585,6 +591,7 @@ function Unpacker(data){
 	this.dataView = new Uint8Array(this.dataBuffer);
 	this.length = this.dataBuffer.byteLength;
 	
+	setTimeout(eraseBuffer,0,data);
 	this.backReferences = [];
 }
 
@@ -770,6 +777,8 @@ Unpacker.prototype.unpack_file = function(){
 			size = this.unpack(),
 			buffer = this.unpack_raw(size);
 	
+	setTimeout(eraseBuffer,0,buffer);
+	
 	if(FileConstructor) return new File([buffer],name,{type: type,lastModified: date});
 	
 	var blob = new Blob([buffer],{type: type});
@@ -786,7 +795,8 @@ Unpacker.prototype.unpack_blob = function(){
 	var type = this.unpack_string(),
 			size = this.unpack(),
 			buffer = this.unpack_raw(size);
-			
+	
+	setTimeout(eraseBuffer,0,buffer);
 	return new Blob([buffer],{type: type});
 }
 
@@ -1010,7 +1020,6 @@ Unpacker.prototype.read = function(length){
 
 function Packer(){
 	this.bufferBuilder = new BufferBuilder();
-	
 	this.backReferences = [];
 }
 
@@ -1352,7 +1361,9 @@ Packer.prototype.pack_chunk = function(chunk){
 	this.bufferBuilder.append(chunk.data);
 }
 
-// Auxiliar functions
+//--------------------//
+// AUXILIAR FUNCTIONS //
+//--------------------//
 
 // Float64
 
@@ -1366,7 +1377,9 @@ function bytesToFloat64(bytes){
 
 function float64ToBuffer(num){
 	_float64Interpreter[0] = num;
-	return _float64Interpreter.buffer.slice(0);
+	var buffer = _float64Interpreter.buffer.slice(0);
+	setTimeout(eraseBuffer,0,buffer);
+	return buffer;
 }
 
 function toFloat64(num){
@@ -1386,7 +1399,9 @@ function bytesToFloat32(bytes){
 
 function float32ToBuffer(num){
 	_float32Interpreter[0] = num;
-	return _float32Interpreter.buffer.slice(0);
+	var buffer = _float32Interpreter.buffer.slice(0);
+	setTimeout(eraseBuffer,0,buffer);
+	return buffer;
 }
 
 function toFloat32(num){
@@ -1406,7 +1421,9 @@ function bytesToInt32(bytes){
 
 function int32ToBuffer(num){
 	_int32Interpreter[0] = num;
-	return _int32Interpreter.buffer.slice(0);
+	var buffer = _int32Interpreter.buffer.slice(0);
+	setTimeout(eraseBuffer,0,buffer);
+	return buffer;
 }
 
 function toInt32(num){
@@ -1426,7 +1443,9 @@ function bytesToUint32(bytes){
 
 function Uint32ToBuffer(num){
 	_Uint32Interpreter[0] = num;
-	return _Uint32Interpreter.buffer.slice(0);
+	var buffer = _Uint32Interpreter.buffer.slice(0);
+	setTimeout(eraseBuffer,0,buffer);
+	return buffer;
 }
 
 function toUint32(num){
@@ -1446,7 +1465,9 @@ function bytesToInt16(bytes){
 
 function int16ToBuffer(num){
 	_int16Interpreter[0] = num;
-	return _int16Interpreter.buffer.slice(0);
+	var buffer = _int16Interpreter.buffer.slice(0);
+	setTimeout(eraseBuffer,0,buffer);
+	return buffer;
 }
 
 function toInt16(num){
@@ -1466,7 +1487,9 @@ function bytesToUint16(bytes){
 
 function Uint16ToBuffer(num){
 	_Uint16Interpreter[0] = num;
-	return _Uint16Interpreter.buffer.slice(0);
+	var buffer = _Uint16Interpreter.buffer.slice(0);
+	setTimeout(eraseBuffer,0,buffer);
+	return buffer;
 }
 
 function toUint16(num){
@@ -1486,7 +1509,9 @@ function bytesToInt8(bytes){
 
 function int8ToBuffer(num){
 	_int8Interpreter[0] = num;
-	return _int8Interpreter.buffer.slice(0);
+	var buffer = _int8Interpreter.buffer.slice(0);
+	setTimeout(eraseBuffer,0,buffer);
+	return buffer;
 }
 
 function toInt8(num){
@@ -1505,7 +1530,9 @@ function bytesToUint8(bytes){
 
 function Uint8ToBuffer(num){
 	_Uint8Buffer[0] = num;
-	return _Uint8Buffer.buffer.slice(0);
+	var buffer = _Uint8Buffer.buffer.slice(0);
+	setTimeout(eraseBuffer,0,buffer);
+	return buffer;
 }
 
 function toUint8(num){
@@ -1563,7 +1590,27 @@ function Joiner(){
 	};
 }
 
-Joiner.prototype.addChunk = function(chunk){
+function _onGetBlob(blob){
+	var	that = this.that,
+			chunk = this.chunk;
+	
+	that.result = new Blob([that.result,blob]);
+	that.index = chunk.end;
+	
+	that.complete = that.index / that.total;
+	
+	callback.call(that);
+	
+	var i;
+	if((i = that.buffer.pointers.indexOf(that.index)) != -1){
+		that.buffer.pointers.splice(i,1);
+		var nextChunk = that.buffer.chunks.splice(i,1)[0];
+		that.addChunk(nextChunk,nextChunk._cb);
+	}
+	
+}
+
+Joiner.prototype.addChunk = function(chunk,callback){
 	
 	if(this.complete >= 1) return false;
 	
@@ -1574,23 +1621,70 @@ Joiner.prototype.addChunk = function(chunk){
 	
 	if(chunk.start != this.index){
 		this.buffer.pointers.push(chunk.start);
+		chunk._cb = callback;
 		this.buffer.chunks.push(chunk);
 		return true;
 	}
 	
-	this.result = new Blob([this.result,chunk.data]);
-	this.index = chunk.end;
-	this.complete = this.index / this.total;
-	
-	var i;
-	if((i = this.buffer.pointers.indexOf(this.index)) != -1){
-		this.buffer.pointers.splice(i,1);
-		var nextChunk = this.buffer.chunks.splice(i,1)[0];
-		return this.addChunk(nextChunk);
-	}
+	var b = _blober(chunk.data,_onGetBlob);
+	b.that = this;
+	b.chunk = chunk;
 	
 	return true;
 }
+
+//---------------------//
+// ARRAYBUFFER TO BLOB //
+//---------------------//
+
+var _blober = (function(){
+	
+	if(!(requestFileSystem || webkitRequestFileSystem || mozRequestFileSystem || moz_requestFileSystem)){
+		function _binder(fun,that,arg){
+			return fun.call(that,arg);
+		}
+		
+		return function(ab,cb){
+			var obj = {};
+			setTimeout(_binder,0,cb,obj,new Blob([ab]));
+			return obj;
+		};
+	}
+	
+	var eraser = URL.createObjectURL(new Blob([
+				'self.requestFileSystemSync = self.webkitRequestFileSystemSync' +
+																			'|| self.moz_requestFileSystemSync,' +
+																			'|| self.mozRequestFileSystemSync,' +
+																			'|| self.requestFileSystemSync;' +
+				'requestFileSystemSync(TEMPORARY,500).' +
+				'root.getDirectory(".BinaryPack",{create: true}).' +
+				'removeRecursively();' +
+				'self.close();'
+			],{type: 'text/javascript'})),
+			file = URL.createObjectURL(new Blob([
+				'self.onmessage = function(e){' +
+					'var b = new Blob([e.data]);' +
+					'self.requestFileSystemSync = self.webkitRequestFileSystemSync' +
+																				'|| self.requestFileSystemSync;' +
+					'var file = 	requestFileSystemSync(TEMPORARY,b.size + 500).' +
+												'root.getDirectory(".BinaryPack",{create: true}).' +
+												'getFile(Date.now().toString(),{create: true});'	+
+					'file.createWriter().write(b);' + 
+					'postMessage(file.file());'	+
+					'self.close();' +
+				'};'
+			],{type: 'text/javascript'}));
+	
+	var wd = new Worker(eraser);
+	URL.revokeObjectURL(eraser);
+	
+	return function(ab,callback){
+		var w = new Worker(file);
+		w.onmessage = callback;
+		w.postMessage(ab,[ab]);
+		return w;
+	};
+})();
 
 //--------------------//
 // ARRAYBUFFER ERASER //
@@ -1612,7 +1706,13 @@ function eraseBuffer(ab){
 // EXPORTS //
 //---------//
 
+function _onFR(){
+	var unpacker = new Unpacker(this.result);
+	this.cb.call(unpacker,unpacker.unpack());
+}
+
 exports.BinaryPack = {
+	getBlob: _blober,
 	Chunker: Chunker,
 	Joiner: Joiner,
 	free: eraseBuffer,
@@ -1624,19 +1724,10 @@ exports.BinaryPack = {
 		return unpacker.unpack();
 	},
 	blobUnpack: function(data,callback){
-		if(data.size > this.maxSize){
-			var unpacker = new BlobUnpacker(data);
-			return unpacker.unpack(callback);
-		}else{
-			var f = new FileReader();
-			f.onload = function(){
-				var unpacker = new Unpacker(f.result);
-				callback.call(unpacker,unpacker.unpack());
-			};
-			f.readAsArrayBuffer(data);
-		}
+		var unpacker = new BlobUnpacker(data);
+		return unpacker.unpack(callback);
 	},
-	maxSize: 1e6,
+	maxRAM: 10e6,
 	pack: function(data){
 		var packer = new Packer();
 		packer.pack(data);
