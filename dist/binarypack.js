@@ -205,14 +205,20 @@ Unpacker.prototype.read = function(n,callback,type){
 			
 			switch(type){
 				case 'arraybuffer':
-					this.doRecursively(callback,this.view.buffer.slice(from - this.start,to - this.start));
+					var arg = this.view.buffer.slice(from - this.start,to - this.start);
+					this.doRecursively(callback,arg);
 					break;
 				case 'blob':
-					_blober(this.view.buffer.slice(from - this.start,to - this.start),
-					callback,this);
+					var arg = this.view.buffer.slice(from - this.start,to - this.start);
+					_blober(arg,callback,this);
 					break;
 				default:
-					this.doRecursively(callback,this.view.subarray(from - this.start,to - this.start));
+					var arg = [],roof = to - this.start;
+					for(var i = from - this.start;i < roof;i++){
+						arg.push(this.view[i]);
+					}
+					
+					this.doRecursively(callback,arg);
 					break;
 			}
 			
@@ -578,11 +584,17 @@ function _getChunkTotal(total){
 }
 
 function _getChunkEnd(end){
-	var chunk = new Chunk(this.blob.slice(this.index,this.index += end - this.genericBuffer.start),this.genericBuffer.start,end,this.genericBuffer.hash,this.genericBuffer.metadata,this.genericBuffer.total);
+	this.genericBuffer.end = end;
+	this.read(end - this.genericBuffer.start,_getChunk,'blob');
+}
+
+function _getChunk(blob){
+	var chunk = new Chunk(blob,this.genericBuffer.start,
+			this.genericBuffer.end,this.genericBuffer.hash,this.genericBuffer.metadata,
+			this.genericBuffer.total);
 	this.genericBuffer = undefined;
 	this.callbacks.pop().call(this,chunk);
 }
-
 
 // Unpacker body
 
@@ -1285,29 +1297,7 @@ function Joiner(){
 	};
 }
 
-function _onGetBlob(blob){
-	var	that = this.that,
-			chunk = this.chunk,
-			callback = this.cb;
-	
-	that.result.push(blob);
-	that.index = chunk.end;
-	
-	that.complete = that.index / that.total;
-	if(that.complete == 1) that.result = new Blob(that.result);
-	
-	callback.call(that);
-	
-	var i;
-	if((i = that.buffer.pointers.indexOf(that.index)) != -1){
-		that.buffer.pointers.splice(i,1);
-		var nextChunk = that.buffer.chunks.splice(i,1)[0];
-		that.addChunk(nextChunk,nextChunk._cb);
-	}
-	
-}
-
-Joiner.prototype.addChunk = function(chunk,callback){
+Joiner.prototype.addChunk = function(chunk){
 	
 	if(this.complete >= 1) return false;
 	
@@ -1318,15 +1308,22 @@ Joiner.prototype.addChunk = function(chunk,callback){
 	
 	if(chunk.start != this.index){
 		this.buffer.pointers.push(chunk.start);
-		chunk._cb = callback;
 		this.buffer.chunks.push(chunk);
 		return true;
 	}
 	
-	var b = _blober(chunk.data,_onGetBlob);
-	b.that = this;
-	b.chunk = chunk;
-	b.cb = callback;
+	this.result.push(chunk.data);
+	this.index = chunk.end;
+	
+	this.complete = this.index / this.total;
+	if(this.complete == 1) this.result = new Blob(this.result);
+	
+	var i;
+	if((i = this.buffer.pointers.indexOf(this.index)) != -1){
+		this.buffer.pointers.splice(i,1);
+		var nextChunk = this.buffer.chunks.splice(i,1)[0];
+		return this.addChunk(nextChunk);
+	}
 	
 	return true;
 }
@@ -1339,8 +1336,8 @@ var _blober = (function(){
 	
 	if(!(window.requestFileSystem || window.webkitRequestFileSystem || window.mozRequestFileSystem || window.moz_requestFileSystem)){
 		
-		return function(ab,cb){
-			var obj = {};
+		return function(ab,cb,that){
+			var obj = that || {};
 			masterClock.after(0,cb,obj,[new Blob([ab])]);
 			return obj;
 		};
