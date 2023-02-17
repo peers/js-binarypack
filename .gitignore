@@ -1,3 +1,5 @@
+.parcel-cache
+coverage
 node_modules/
 .cache/
 .idea/
