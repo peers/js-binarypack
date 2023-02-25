@@ -1,3 +1,15 @@
+# [2.0.0-rc.1](https://github.com/peers/js-binarypack/compare/v1.0.3-rc.1...v2.0.0-rc.1) (2023-02-25)
+
+
+### Features
+
+* return `ArrayBuffer` instead of `Blob` ([689eafd](https://github.com/peers/js-binarypack/commit/689eafd471fccb7eae0d68528b764d691e9d96b2))
+
+
+### BREAKING CHANGES
+
+* Return type of `pack` is now `ArrayBuffer`
+
 ## [1.0.3-rc.1](https://github.com/peers/js-binarypack/compare/v1.0.2...v1.0.3-rc.1) (2023-02-25)
 
 
