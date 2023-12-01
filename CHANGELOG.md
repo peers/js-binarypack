@@ -1,3 +1,21 @@
+# [3.0.0-rc.1](https://github.com/peers/js-binarypack/compare/v2.0.0...v3.0.0-rc.1) (2023-12-01)
+
+
+### Bug Fixes
+
+* re-add Blob support ([12f0e75](https://github.com/peers/js-binarypack/commit/12f0e75ab8a7e699330e53541901dbe07be536b1))
+
+
+### Features
+
+* return `ArrayBuffer` instead of `Blob` ([689eafd](https://github.com/peers/js-binarypack/commit/689eafd471fccb7eae0d68528b764d691e9d96b2))
+
+
+### BREAKING CHANGES
+
+* Blobs require making the `pack` interface async
+* Return type of `pack` is now `ArrayBuffer`
+
 # [2.0.0](https://github.com/peers/js-binarypack/compare/v1.0.2...v2.0.0) (2023-06-22)
 
 
