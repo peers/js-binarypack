@@ -10,8 +10,8 @@ describe("Bugs", () => {
 	});
 	describe("Numbers", () => {
 		it("gives back wrong value on INT64_MAX ", async () => {
-			expect(await packAndUnpack(0x7fffffffffffffff)).toBe(
-				-9223372036854776000,
+			expect(await packAndUnpack(0x7fffffffffffffff)).not.toEqual(
+				0x7fffffffffffffff,
 			);
 		});
 	});

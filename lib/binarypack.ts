@@ -8,6 +8,7 @@ export type Packable =
 	| boolean
 	| Date
 	| ArrayBuffer
+	| Blob
 	| Array<Packable>
 	| { [key: string]: Packable }
 	| ({ BYTES_PER_ELEMENT: number } & ArrayBufferView);
@@ -26,9 +27,9 @@ export function unpack<T extends Unpackable>(data: ArrayBuffer) {
 	return unpacker.unpack() as T;
 }
 
-export function pack(data: Packable) {
+export async function pack(data: Packable) {
 	const packer = new Packer();
-	packer.pack(data);
+	await packer.pack(data);
 	return packer.getBuffer();
 }
 
@@ -296,7 +297,7 @@ export class Packer {
 		return this._bufferBuilder.toArrayBuffer();
 	}
 
-	pack(value: Packable) {
+	async pack(value: Packable) {
 		if (typeof value === "string") {
 			this.pack_string(value);
 		} else if (typeof value === "number") {
@@ -327,6 +328,8 @@ export class Packer {
 					this.pack_bin(new Uint8Array(v.buffer, v.byteOffset, v.byteLength));
 				} else if (value instanceof Date) {
 					this.pack_string(value.toString());
+				} else if (value instanceof Blob) {
+					this.pack_bin(new Uint8Array(await value.arrayBuffer()));
 				} else if (
 					constructor == Object ||
 					constructor.toString().startsWith("class")
