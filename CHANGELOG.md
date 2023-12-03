@@ -1,3 +1,11 @@
+# [2.1.0](https://github.com/peers/js-binarypack/compare/v2.0.0...v2.1.0) (2023-12-03)
+
+
+### Features
+
+* re-add Blob support ([cd17d63](https://github.com/peers/js-binarypack/commit/cd17d638e06dd4388145ac62f24c109030ee0e36)), closes [#61](https://github.com/peers/js-binarypack/issues/61)
+* re-add Blob support ([#62](https://github.com/peers/js-binarypack/issues/62)) ([e79d1ee](https://github.com/peers/js-binarypack/commit/e79d1eef75a6a9e6f07f5af0aa031925583359ad)), closes [#61](https://github.com/peers/js-binarypack/issues/61)
+
 # [2.0.0](https://github.com/peers/js-binarypack/compare/v1.0.2...v2.0.0) (2023-06-22)
 
 
