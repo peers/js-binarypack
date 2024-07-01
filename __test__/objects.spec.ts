@@ -1,12 +1,14 @@
-import { expect, describe, it } from "@jest/globals";
+import {
+	describe, it, expect
+} from "vitest"
 
-import commit_data from "./data";
-import { packAndUnpack } from "./util";
+import commit_data, { blob } from "./data.js";
+import { packAndUnpack } from "./util.js";
 
 describe("Binarypack", () => {
 	it("should keep objects intact", async () => {
 		const values = commit_data;
-		// expect.assertions(values.length);
+		expect.assertions(values.length);
 		for (const v of values) {
 			expect(packAndUnpack(v)).toEqual(v);
 		}
@@ -21,9 +23,23 @@ describe("Binarypack", () => {
 	it("should keep arrays of objects intact", async () => {
 		expect(packAndUnpack(commit_data)).toEqual(commit_data);
 	});
+
+	it("should keep arrays of objects intact :: Promise", async () => {
+		const a = [{}, null, blob, null, 1, "string", true, false];
+		const b = [{}, null, await blob.arrayBuffer(), null, 1, "string", true, false];
+		expect(await packAndUnpack(a)).toEqual(b);
+	});
+
+	it("should keep objects intact :: Promise", async () => {
+		const a = structuredClone(commit_data[0]) as typeof commit_data[0] & { blob: Blob };
+		a.blob = blob;
+		const b = structuredClone(commit_data[0]) as typeof commit_data[0] & { blob: ArrayBuffer };
+		b.blob = await blob.arrayBuffer();
+		expect(await packAndUnpack(a)).toEqual(b);
+	});
 	it("should keep empty and very large arrays intact", async () => {
 		const values = [[], Array(0xffff).fill(0)];
-		// expect.assertions(values.length);
+		expect.assertions(values.length);
 		for (const v of values) {
 			expect(packAndUnpack(v)).toEqual(v);
 		}
@@ -54,7 +70,7 @@ describe("Binarypack", () => {
 				23, 24, 25, 26, 27, 28, 30, 31,
 			]),
 		];
-		// expect.assertions(values.length);
+		expect.assertions(2* values.length);
 		for (const v of values) {
 			const result = packAndUnpack<ArrayBuffer>(v);
 			expect(result).toBeInstanceOf(ArrayBuffer);
@@ -77,7 +93,7 @@ describe("Binarypack", () => {
 				].map((x) => -x),
 			),
 		];
-		// expect.assertions(values.length);
+		expect.assertions(2* values.length);
 		for (const v of values) {
 			const result = packAndUnpack<ArrayBuffer>(v);
 			expect(result).toBeInstanceOf(ArrayBuffer);
@@ -97,7 +113,7 @@ describe("Binarypack", () => {
 				23, 24, 25, 26, 27, 28, 30, 31,
 			]).buffer,
 		];
-		// expect.assertions(values.length);
+		expect.assertions(values.length);
 		for (const v of values) {
 			expect(packAndUnpack<ArrayBuffer>(v)).toEqual(v);
 		}
@@ -105,7 +121,7 @@ describe("Binarypack", () => {
 
 	it("should transfer Dates as String", async () => {
 		const values = [new Date(), new Date(Date.UTC(1, 1, 1, 1, 1, 1, 1))];
-		// expect.assertions(values.length);
+		expect.assertions(values.length);
 		for (const v of values) {
 			expect(packAndUnpack(v)).toEqual(v.toString());
 		}

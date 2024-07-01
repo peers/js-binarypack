@@ -1,4 +1,4 @@
-import { pack, Packable, unpack, Unpackable } from "../lib/binarypack";
+import { pack, Packable, unpack, Unpackable } from "../lib/binarypack.js";
 
 export const packAndUnpack = <T extends Unpackable>(data: Packable) => {
 	const encoded = pack(data);

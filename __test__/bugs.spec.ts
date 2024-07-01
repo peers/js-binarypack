@@ -1,6 +1,8 @@
-import { expect, describe, it } from "@jest/globals";
+import {
+	describe, it, expect
+} from "vitest"
 
-import { packAndUnpack } from "./util";
+import { packAndUnpack } from "./util.js";
 
 describe("Bugs", () => {
 	describe("Objects", () => {

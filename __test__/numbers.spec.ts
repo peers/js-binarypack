@@ -1,6 +1,8 @@
-import { expect, describe, it } from "@jest/globals";
+import {
+	describe, it, expect
+} from "vitest"
 
-import { packAndUnpack } from "./util";
+import { packAndUnpack } from "./util.js";
 
 describe("Binarypack", () => {
 	it("should keep valid UTF-8", async () => {
@@ -24,7 +26,7 @@ describe("Binarypack", () => {
 			// 0x7FFFFFFFFFFFFFFF,
 			0x0fffffffffffffff,
 		];
-		// expect.assertions(values.length);
+		expect.assertions(values.length);
 		for (const v of values) {
 			expect(packAndUnpack(v)).toEqual(v);
 		}

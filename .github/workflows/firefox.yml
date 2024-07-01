@@ -1,0 +1,32 @@
+name: Firefox
+
+on:
+  push:
+  pull_request:
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20.x]
+        firefox: [ '84.0', 'latest' ]
+    name: Firefox ${{ matrix.firefox }} sample
+    steps:
+      - name: Setup firefox
+        id: setup-firefox
+        uses: browser-actions/setup-firefox@v1
+        with:
+          firefox-version: ${{ matrix.firefox }}
+      - run: |
+          echo Installed firefox versions: ${{ steps.setup-firefox.outputs.firefox-version }}
+          ${{ steps.setup-firefox.outputs.firefox-path }} --version
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+           node-version: ${{ matrix.node-version }}
+           cache: "npm"
+      - run: npm ci
+      - run: npm run test --browser=firefox

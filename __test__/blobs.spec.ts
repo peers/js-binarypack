@@ -1,9 +1,11 @@
-import { expect, describe, it } from "@jest/globals";
+import {
+	describe, it, expect
+} from "vitest"
 
-import { packAndUnpack } from "./util";
+import { packAndUnpack } from "./util.js";
 
-import data, { blob, objWithBlob } from "./data";
-import { pack, unpack } from "../lib/binarypack";
+import data, { blob, objWithBlob } from "./data.js";
+
 
 describe("Blobs", () => {
 	it("replaces Blobs with ArrayBuffer ", async () => {

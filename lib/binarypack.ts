@@ -1,4 +1,4 @@
-import { BufferBuilder } from "./bufferbuilder";
+import { BufferBuilder } from "./bufferbuilder.js";
 
 export type Packable =
 	| null
@@ -407,17 +407,35 @@ export class Packer {
 			throw new Error("Invalid length");
 		}
 
-		const packNext = (index: number): Promise<void> | void => {
-			if (index < length) {
-				const res = this.pack(ary[index]);
-				if (res instanceof Promise) {
-					return res.then(() => packNext(index + 1));
-				}
-				return packNext(index + 1);
-			}
-		};
+		// const packNext = (index: number): Promise<void> | void => {
+		// 	if (index < length) {
+		// 		const res = this.pack(ary[index]);
+		// 		if (res instanceof Promise) {
+		// 			return res.then(() => packNext(index + 1));
+		// 		}
+		// 		return packNext(index + 1);
+		// 	}
+		// };
 
-		return packNext(0);
+		// return packNext(0);
+			// let isAsync = false;
+
+			for (let index = 0; index < length; index++) {
+			  const res = this.pack(ary[index]);
+			  if (res instanceof Promise) {
+				  return (async () => {
+					  await res
+					  index++;
+					for (; index < length; index++) {
+					  await this.pack(ary[index]);
+					}
+				  })();
+			  }
+			}
+
+			// if (isAsync) {
+
+			// }
 	}
 
 	pack_integer(num: number) {
@@ -485,22 +503,46 @@ export class Packer {
 			throw new Error("Invalid length");
 		}
 
-		const packNext = (index: number): Promise<void> | void => {
-			if (index < keys.length) {
-				const prop = keys[index];
-				// eslint-disable-next-line no-prototype-builtins
-				if (obj.hasOwnProperty(prop)) {
-					this.pack(prop);
-					const res = this.pack(obj[prop]);
-					if (res instanceof Promise) {
-						return res.then(() => packNext(index + 1));
-					}
-				}
-				return packNext(index + 1);
-			}
-		};
+		// const packNext = (index: number): Promise<void> | void => {
+		// 	if (index < keys.length) {
+		// 		const prop = keys[index];
+		// 		// eslint-disable-next-line no-prototype-builtins
+		// 		if (obj.hasOwnProperty(prop)) {
+		// 			this.pack(prop);
+		// 			const res = this.pack(obj[prop]);
+		// 			if (res instanceof Promise) {
+		// 				return res.then(() => packNext(index + 1));
+		// 			}
+		// 		}
+		// 		return packNext(index + 1);
+		// 	}
+		// };
 
-		return packNext(0);
+		// return packNext(0);
+
+		for (let index = 0; index < keys.length; index++) {
+			const prop = keys[index];
+			if(Object.prototype.hasOwnProperty.call(obj, prop)){
+			  const keyRes = this.pack(prop);
+			  const valueRes = this.pack(obj[prop]);
+
+			  if (keyRes instanceof Promise || valueRes instanceof Promise) {
+				return (async () => {
+				   await keyRes;
+				  await valueRes;
+					index++;
+
+				  for (; index < keys.length; index++) {
+					  const nextProp = keys[index];
+					  if(Object.prototype.hasOwnProperty.call(obj, nextProp)){
+					  await this.pack(nextProp);
+					  await this.pack(obj[nextProp]);
+					}
+				  }
+				})();
+			  }
+			}
+		  }
 	}
 
 	pack_uint8(num: number) {
