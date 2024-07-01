@@ -1,4 +1,4 @@
-name: Firefox
+name: Test
 
 on:
   push:
@@ -6,12 +6,11 @@ on:
 
 
 jobs:
-  build:
+  firefox:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [20.x]
-        firefox: [ '84.0', 'latest' ]
+        firefox: [ '80.0', 'latest' ]
     name: Firefox ${{ matrix.firefox }} sample
     steps:
       - name: Setup firefox
@@ -23,10 +22,50 @@ jobs:
           echo Installed firefox versions: ${{ steps.setup-firefox.outputs.firefox-version }}
           ${{ steps.setup-firefox.outputs.firefox-path }} --version
       - uses: actions/checkout@v3
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+      - uses: actions/setup-node@v3
         with:
-           node-version: ${{ matrix.node-version }}
+           node-version: "lts"
            cache: "npm"
       - run: npm ci
       - run: npm run test --browser=firefox
+  chrome:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        chrome: [ '80.0', 'latest' ]
+    name: Chrome ${{ matrix.chrome }} sample
+    steps:
+      - name: Setup chrome
+        id: setup-chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: ${{ matrix.chrome }}
+      - run: |
+          echo Installed chrome versions: ${{ steps.setup-chrome.outputs.chrome-version }}
+          ${{ steps.setup-chrome.outputs.chrome-path }} --version
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+           node-version: "lts"
+           cache: "npm"
+      - run: npm ci
+      - run: npm run test --browser=chrome
+  node:
+    runs-on: ubuntu-latest
+    name: Node
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+           node-version: "lts"
+           cache: "npm"
+      - run: npm ci
+      - run: npm run test
+  bun:
+    runs-on: ubuntu-latest
+    name: Bun
+    steps:
+      - uses: actions/checkout@v3
+      - uses: oven-sh/setup-bun@v1
+      - run: bun install
+      - run: bun run test
